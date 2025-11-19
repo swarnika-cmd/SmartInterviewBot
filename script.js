@@ -1,11 +1,13 @@
 // ========================================
 // CONFIGURATION
 // ========================================
-let API_KEY = localStorage.getItem('gemini_api_key') || ""; // Load from localStorage
+let API_KEY = localStorage.getItem('gemini_api_key') || "";
 const MODEL = "gemini-2.5-flash-preview-09-2025";
 
 function getApiUrl() {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
+    // Reload API_KEY from localStorage to ensure it's always current
+    const currentKey = localStorage.getItem('gemini_api_key') || API_KEY;
+    return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${currentKey}`;
 }
 
 // ========================================
@@ -88,18 +90,22 @@ function validateInputs() {
         return false;
     }
 
-    // Check API key - reload it from localStorage in case it was just saved
-    const storedKey = localStorage.getItem('gemini_api_key');
-    if (!storedKey || storedKey.trim() === "") {
-        showError('⚠️ API Key is not configured. Click the ⚙️ gear icon at the top to configure it.');
-        updateBotMessage('Please configure your Gemini API key first!');
-        showApiKeyModal(); // Automatically show the modal
+    if (resumeText.length < 50) {
+        showError('⚠️ Resume is too short. Please add more details.');
         return false;
     }
 
-    // Update API_KEY from storage
-    API_KEY = storedKey;
+    // Check API key - reload from localStorage
+    const storedKey = localStorage.getItem('gemini_api_key');
+    if (!storedKey || storedKey.trim() === "") {
+        showError('⚠️ API Key not configured. Click the ⚙️ button to set it up.');
+        updateBotMessage('Please configure your Gemini API key first!');
+        setTimeout(() => showApiKeyModal(), 500);
+        return false;
+    }
 
+    // Update global API_KEY
+    API_KEY = storedKey;
     return true;
 }
 
@@ -115,11 +121,18 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
             }
 
             if (response.status === 429 && i < maxRetries - 1) {
-                // Rate limit - retry with exponential backoff
                 const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
                 updateStatus(`Rate limited. Retrying in ${Math.ceil(delay / 1000)}s...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
+            }
+
+            // Handle specific error codes
+            if (response.status === 400) {
+                throw new Error('Invalid API request. Check your inputs.');
+            }
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Invalid API Key. Please reconfigure in settings.');
             }
 
             throw new Error(`API Error: ${response.statusText} (${response.status})`);
@@ -128,7 +141,6 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
                 throw error;
             }
 
-            // Transient error - retry
             const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
             await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -186,12 +198,12 @@ async function generateQuestions() {
 
     // Disable button and show loading state
     generateButton.disabled = true;
+    generateButton.textContent = '⏳ Generating...';
     updateStatus('⏳ Generating questions...');
     updateBotMessage('I\'m analyzing your resume and generating personalized interview questions. This may take a moment...');
     resultsContainer.innerHTML = `<p class="placeholder-text">🤖 Processing your information... <span class="loading"></span></p>`;
 
     try {
-        // Prepare the system prompt
         const systemPrompt = `You are an expert hiring manager for leading technology companies. Your task is to generate challenging, relevant interview questions tailored to the candidate's specific experience and the target job role.
 
 Guidelines:
@@ -199,7 +211,8 @@ Guidelines:
 2. Ask about specific challenges overcome and lessons learned
 3. Include both behavioral and technical questions (if applicable)
 4. Generate exactly 6-8 questions
-5. Format as a numbered list (1., 2., etc.) with no additional text`;
+5. Format as a numbered list (1., 2., etc.) with no additional text
+6. Make questions specific to the candidate's actual experience`;
 
         const userQuery = `Target Role: ${roleText}
 
@@ -247,13 +260,22 @@ Generate interview questions for this candidate based on their resume and target
 
     } catch (error) {
         console.error('Generation failed:', error);
-        showError(`❌ Error: ${error.message}`);
+        
+        // User-friendly error messages
+        let errorMsg = error.message;
+        if (errorMsg.includes('Invalid API Key') || errorMsg.includes('403') || errorMsg.includes('401')) {
+            errorMsg = 'Invalid API Key. Click ⚙️ to reconfigure.';
+            setTimeout(() => showApiKeyModal(), 1000);
+        }
+        
+        showError(`❌ Error: ${errorMsg}`);
         updateBotMessage('Oops! Something went wrong. Please check your API key and try again.');
         updateStatus('❌ Error occurred');
         resultsContainer.innerHTML = '<p class="placeholder-text">Failed to generate questions. Please try again.</p>';
     } finally {
         // Re-enable button
         generateButton.disabled = false;
+        generateButton.innerHTML = '<span class="btn-icon">▶</span> Generate';
     }
 }
 
@@ -265,6 +287,12 @@ Generate interview questions for this candidate based on their resume and target
  * Show API key configuration modal
  */
 function showApiKeyModal() {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('api-key-modal');
+    if (existingModal) {
+        document.body.removeChild(existingModal);
+    }
+
     const modal = document.createElement('div');
     modal.id = 'api-key-modal';
     modal.style.cssText = `
@@ -273,11 +301,12 @@ function showApiKeyModal() {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.8);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000;
+        animation: fadeIn 0.3s ease;
     `;
 
     const modalContent = document.createElement('div');
@@ -289,6 +318,7 @@ function showApiKeyModal() {
         max-width: 500px;
         width: 90%;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        animation: slideIn 0.3s ease;
     `;
 
     const title = document.createElement('h2');
@@ -302,7 +332,7 @@ function showApiKeyModal() {
     `;
 
     const description = document.createElement('p');
-    description.innerHTML = 'Get your free API key from <strong><a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #3498db;">Google AI Studio</a></strong>';
+    description.innerHTML = 'Get your free API key from <strong><a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #3498db; text-decoration: underline;">Google AI Studio ↗</a></strong>';
     description.style.cssText = `
         color: #bdc3c7;
         margin-bottom: 20px;
@@ -310,10 +340,22 @@ function showApiKeyModal() {
         line-height: 1.6;
     `;
 
+    const currentKeyInfo = document.createElement('p');
+    const storedKey = localStorage.getItem('gemini_api_key');
+    if (storedKey) {
+        currentKeyInfo.textContent = `Current: ${storedKey.substring(0, 10)}...${storedKey.substring(storedKey.length - 4)}`;
+        currentKeyInfo.style.cssText = `
+            color: #27ae60;
+            font-size: 11px;
+            margin-bottom: 10px;
+            font-family: 'Courier Prime', monospace;
+        `;
+    }
+
     const input = document.createElement('input');
     input.type = 'password';
     input.placeholder = 'Paste your Gemini API key here';
-    input.value = API_KEY;
+    input.value = storedKey || '';
     input.style.cssText = `
         width: 100%;
         padding: 10px;
@@ -325,6 +367,7 @@ function showApiKeyModal() {
         border-radius: 3px;
         margin-bottom: 15px;
         transition: all 0.3s ease;
+        box-sizing: border-box;
     `;
 
     input.addEventListener('focus', function() {
@@ -345,6 +388,7 @@ function showApiKeyModal() {
         font-size: 12px;
         margin-bottom: 20px;
         cursor: pointer;
+        user-select: none;
     `;
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -374,23 +418,42 @@ function showApiKeyModal() {
     `;
     saveBtn.addEventListener('mouseover', function() {
         this.style.background = '#2ecc71';
+        this.style.transform = 'translateY(-1px)';
     });
     saveBtn.addEventListener('mouseout', function() {
         this.style.background = '#27ae60';
+        this.style.transform = 'translateY(0)';
     });
     saveBtn.addEventListener('click', function() {
         const newKey = input.value.trim();
+        
         if (!newKey) {
-            alert('Please enter an API key');
+            alert('⚠️ Please enter an API key');
+            input.focus();
             return;
         }
-        // Update the global API_KEY variable
-        API_KEY = newKey;
+        
+        // Basic validation - Gemini keys start with "AIza"
+        if (!newKey.startsWith('AIza')) {
+            alert('⚠️ Invalid API key format.\n\nGemini API keys start with "AIza".\nPlease check your key and try again.');
+            input.focus();
+            return;
+        }
+        
+        // Save to localStorage FIRST
         localStorage.setItem('gemini_api_key', newKey);
-        console.log('API Key saved:', newKey.substring(0, 10) + '...'); // Debug log
+        
+        // Then update the global variable
+        API_KEY = newKey;
+        
+        console.log('✓ API Key saved successfully:', newKey.substring(0, 10) + '...');
+        
+        // Close modal
         document.body.removeChild(modal);
-        updateBotMessage('✓ API Key saved! You can now generate interview questions.');
-        updateStatus('✓ API Key configured');
+        
+        // Update UI
+        updateBotMessage('✓ API Key saved successfully! You can now generate interview questions.');
+        updateStatus('✓ Ready to generate');
         hideError();
     });
 
@@ -410,26 +473,50 @@ function showApiKeyModal() {
     `;
     cancelBtn.addEventListener('mouseover', function() {
         this.style.background = '#ec7063';
+        this.style.transform = 'translateY(-1px)';
     });
     cancelBtn.addEventListener('mouseout', function() {
         this.style.background = '#e74c3c';
+        this.style.transform = 'translateY(0)';
     });
     cancelBtn.addEventListener('click', function() {
         document.body.removeChild(modal);
     });
 
+    // Allow Enter key to save
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            saveBtn.click();
+        }
+    });
+
+    // Allow Escape to close
+    modal.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.body.removeChild(modal);
+        }
+    });
+
     buttonContainer.appendChild(saveBtn);
     buttonContainer.appendChild(cancelBtn);
 
-    modalContent.appendChild(title);
-    modalContent.appendChild(description);
+    if (storedKey) {
+        modalContent.appendChild(title);
+        modalContent.appendChild(description);
+        modalContent.appendChild(currentKeyInfo);
+    } else {
+        modalContent.appendChild(title);
+        modalContent.appendChild(description);
+    }
+    
     modalContent.appendChild(input);
     modalContent.appendChild(togglePassword);
     modalContent.appendChild(buttonContainer);
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
 
-    input.focus();
+    // Focus input after a brief delay for animation
+    setTimeout(() => input.focus(), 100);
 }
 
 // ========================================
@@ -454,16 +541,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Check if API key is configured on load
-    console.log('API_KEY on load:', API_KEY); // Debug
-    if (!API_KEY || API_KEY.trim() === "") {
+    const storedKey = localStorage.getItem('gemini_api_key');
+    console.log('Checking API key on load:', storedKey ? '✓ Found' : '✗ Not found');
+    
+    if (!storedKey || storedKey.trim() === "") {
         updateStatus('⚠️ API Key not configured');
         updateBotMessage('Welcome! Please configure your Gemini API key by clicking the ⚙️ button at the top right to get started.');
-        // Auto-show API key modal on first load if no key is set
+        // Auto-show API key modal on first load
         setTimeout(() => {
             showApiKeyModal();
-        }, 500);
+        }, 1000);
     } else {
+        API_KEY = storedKey;
         updateStatus('✓ Ready for input');
         updateBotMessage('Hello! I\'m your Interview Prep Bot. Ready to help you prepare for interviews!');
+        console.log('✓ API Key loaded successfully');
     }
 });
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes slideIn {
+        from { 
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
