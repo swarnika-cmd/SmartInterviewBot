@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Preparation Bot</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header Bar -->
+        <header class="window-header">
+            <span class="window-icon">◼</span>
+            <span class="window-title">SMART.INTERVIEW_BOT.EXE</span>
+            <span class="status-indicator">Online</span>
+            <button id="settings-btn" class="settings-btn" title="Configure API Key" onclick="showApiKeyModal()">⚙️</button>
+        </header>
+
+        <!-- Main Game Area -->
+        <div class="game-board">
+            <!-- Left Side: Character and Dialog -->
+            <div class="left-panel">
+                <!-- Character -->
+                <div class="character-container">
+                    <div class="character">
+                        <div class="character-head">
+                            <div class="character-eye left-eye"></div>
+                            <div class="character-eye right-eye"></div>
+                            <div class="character-mouth"></div>
+                        </div>
+                        <div class="character-body"></div>
+                    </div>
+                </div>
+
+                <!-- Speech Bubble -->
+                <div class="speech-bubble">
+                    <div class="bubble-title">💬 Interview Bot says:</div>
+                    <p id="bot-message">Hello! I'm your Interview Prep Bot. I can help you prepare for your dream job. Just fill in your details and I'll generate tailored questions!</p>
+                </div>
+
+                <!-- Status Box -->
+                <div class="status-box">
+                    <p id="status-text">Waiting for input...</p>
+                </div>
+            </div>
+
+            <!-- Right Side: Input Form -->
+            <div class="right-panel">
+                <div class="input-panel">
+                    <!-- Role Input -->
+                    <div class="input-group">
+                        <label for="role-input" class="input-label">Target Job Title</label>
+                        <input 
+                            type="text" 
+                            id="role-input" 
+                            placeholder="e.g., Senior Frontend Engineer"
+                            class="text-input"
+                        >
+                    </div>
+
+                    <!-- Resume Input -->
+                    <div class="input-group">
+                        <label for="resume-input" class="input-label">Your Resume (Text)</label>
+                        <textarea 
+                            id="resume-input" 
+                            rows="8"
+                            placeholder="Paste your resume content here..."
+                            class="text-input textarea-input"
+                        ></textarea>
+                    </div>
+
+                    <!-- Button Row -->
+                    <div class="button-row">
+                        <button id="generate-button" class="btn btn-primary" onclick="generateQuestions()">
+                            <span class="btn-icon">▶</span>
+                            Generate
+                        </button>
+                        <button id="clear-button" class="btn btn-secondary" onclick="clearInputs()">
+                            <span class="btn-icon">✕</span>
+                            Clear
+                        </button>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="error-message" class="error-message hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Output Area -->
+        <div class="output-area">
+            <div class="output-header">Generated Interview Questions</div>
+            <div id="results-container" class="results-container">
+                <p class="placeholder-text">Questions will appear here...</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="window-footer">
+            <span class="tip-text">💡 Tip: Ask the bot to explain difficult concepts in simple terms!</span>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
