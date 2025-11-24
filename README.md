@@ -2,7 +2,7 @@
 An AI-powered web application that generates personalized interview questions based on your resume and target job role using Google's Gemini API.
 
 🔗 Live Demo
-Try it here! 
+[Try it here! ] (https://smart-interview-bot.vercel.app/)
 
 📋 Table of Contents
 
@@ -214,16 +214,6 @@ Add Environment Variable (Security)
 In Vercel Dashboard → Settings → Environment Variables
 Add: GEMINI_API_KEY = your-api-key
 Update code to use process.env.GEMINI_API_KEY
-
-
-
-Your site will be live at: https://smart-interview-prep.vercel.app
-Other Deployment Options
-
-Netlify: Similar to Vercel, drag & drop or GitHub integration
-GitHub Pages: Free hosting for static sites
-Render: Good for full-stack apps (if you add a backend)
-
 
 
 ⚠️ Known Issues
