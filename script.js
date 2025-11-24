@@ -440,10 +440,10 @@ function showApiKeyModal() {
             return;
         }
         
-        // Save to localStorage FIRST
+        // Save to localStorage
         localStorage.setItem('gemini_api_key', newKey);
         
-        // Then update the global variable
+        // Update the global variable
         API_KEY = newKey;
         
         console.log('✓ API Key saved successfully:', newKey.substring(0, 10) + '...');
@@ -544,18 +544,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedKey = localStorage.getItem('gemini_api_key');
     console.log('Checking API key on load:', storedKey ? '✓ Found' : '✗ Not found');
     
-    if (!storedKey || storedKey.trim() === "") {
-        updateStatus('⚠️ API Key not configured');
-        updateBotMessage('Welcome! Please configure your Gemini API key by clicking the ⚙️ button at the top right to get started.');
-        // Auto-show API key modal on first load
-        setTimeout(() => {
-            showApiKeyModal();
-        }, 1000);
-    } else {
+    if (storedKey && storedKey.trim() !== "") {
+        // API key exists - load it and set ready state
         API_KEY = storedKey;
         updateStatus('✓ Ready for input');
         updateBotMessage('Hello! I\'m your Interview Prep Bot. Ready to help you prepare for interviews!');
         console.log('✓ API Key loaded successfully');
+    } else {
+        // No API key - show configuration prompt
+        updateStatus('⚠️ API Key not configured');
+        updateBotMessage('Welcome! Please configure your Gemini API key by clicking the ⚙️ button at the top right to get started.');
+        // Only auto-show modal if truly first time (no key at all)
+        if (!storedKey) {
+            setTimeout(() => {
+                showApiKeyModal();
+            }, 1000);
+        }
     }
 });
 
