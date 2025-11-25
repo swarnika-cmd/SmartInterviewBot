@@ -1,8 +1,9 @@
 // ========================================
 // CONFIGURATION
 // ========================================
-let API_KEY = localStorage.getItem('gemini_api_key') || "";
-const MODEL = "gemini-2.5-flash-preview-09-2025";
+
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 
+                localStorage.getItem('gemini_api_key') || "";
 
 function getApiUrl() {
     // Reload API_KEY from localStorage to ensure it's always current
