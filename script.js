@@ -162,11 +162,11 @@ ${resumeText}
 
 Generate interview questions for this candidate based on their resume and target role.`;
 
+        // Send generic payload to backend
         const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: {
-                parts: [{ text: systemPrompt }]
-            }
+            role: roleText,
+            resume: resumeText,
+            systemPrompt: systemPrompt
         };
 
         const response = await fetch('/api/generate', {
@@ -178,7 +178,7 @@ Generate interview questions for this candidate based on their resume and target
         const result = await response.json();
 
         if (!response.ok) {
-            // Handle different error formats (Gemini acts differently than standard APIs)
+            // Handle error messages from backend
             const errorDetails = result.error || result;
             const errorMessage = errorDetails.message ||
                 (typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails));
@@ -186,8 +186,8 @@ Generate interview questions for this candidate based on their resume and target
             throw new Error(errorMessage);
         }
 
-        // Extract generated content from standard Gemini response structure
-        const generatedText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        // Backend returns { text: "..." } for any provider
+        const generatedText = result.text;
 
         if (!generatedText) {
             throw new Error('No content generated from API');
