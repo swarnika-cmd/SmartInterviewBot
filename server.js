@@ -35,6 +35,7 @@ app.post('/api/generate', async (req, res) => {
         const data = await response.json();
 
         if (!response.ok) {
+            console.error('Gemini API Error:', JSON.stringify(data, null, 2));
             return res.status(response.status).json(data);
         }
 

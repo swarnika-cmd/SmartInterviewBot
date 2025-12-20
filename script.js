@@ -178,7 +178,12 @@ Generate interview questions for this candidate based on their resume and target
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || result.message || 'Failed to fetch from backend');
+            // Handle different error formats (Gemini acts differently than standard APIs)
+            const errorDetails = result.error || result;
+            const errorMessage = errorDetails.message ||
+                (typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails));
+
+            throw new Error(errorMessage);
         }
 
         // Extract generated content from standard Gemini response structure
