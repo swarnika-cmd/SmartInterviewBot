@@ -21,7 +21,7 @@ app.post('/api/generate', async (req, res) => {
         }
 
         const { prompt } = req.body;
-        const MODEL = 'gemini-1.5-flash';
+        const MODEL = 'gemini-2.5-flash';
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
 
         const response = await fetch(API_URL, {
