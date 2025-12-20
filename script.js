@@ -2,8 +2,8 @@
 // CONFIGURATION
 // ========================================
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 
-                localStorage.getItem('gemini_api_key') || "";
+const MODEL = 'gemini-pro';
+let API_KEY = localStorage.getItem('gemini_api_key') || "";
 
 function getApiUrl() {
     // Reload API_KEY from localStorage to ensure it's always current
@@ -14,6 +14,7 @@ function getApiUrl() {
 // ========================================
 // DOM ELEMENTS
 // ========================================
+const settingsButton = document.getElementById('settings-btn');
 const roleInput = document.getElementById('role-input');
 const resumeInput = document.getElementById('resume-input');
 const generateButton = document.getElementById('generate-button');
@@ -261,14 +262,14 @@ Generate interview questions for this candidate based on their resume and target
 
     } catch (error) {
         console.error('Generation failed:', error);
-        
+
         // User-friendly error messages
         let errorMsg = error.message;
         if (errorMsg.includes('Invalid API Key') || errorMsg.includes('403') || errorMsg.includes('401')) {
             errorMsg = 'Invalid API Key. Click ⚙️ to reconfigure.';
             setTimeout(() => showApiKeyModal(), 1000);
         }
-        
+
         showError(`❌ Error: ${errorMsg}`);
         updateBotMessage('Oops! Something went wrong. Please check your API key and try again.');
         updateStatus('❌ Error occurred');
@@ -371,12 +372,12 @@ function showApiKeyModal() {
         box-sizing: border-box;
     `;
 
-    input.addEventListener('focus', function() {
+    input.addEventListener('focus', function () {
         this.style.borderColor = '#3498db';
         this.style.boxShadow = '0 0 8px rgba(52, 152, 219, 0.5)';
     });
 
-    input.addEventListener('blur', function() {
+    input.addEventListener('blur', function () {
         this.style.borderColor = '#2c3e50';
         this.style.boxShadow = 'none';
     });
@@ -394,7 +395,7 @@ function showApiKeyModal() {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
-    checkbox.addEventListener('change', function() {
+    checkbox.addEventListener('change', function () {
         input.type = this.checked ? 'text' : 'password';
     });
     togglePassword.appendChild(checkbox);
@@ -417,41 +418,41 @@ function showApiKeyModal() {
         cursor: pointer;
         transition: all 0.2s ease;
     `;
-    saveBtn.addEventListener('mouseover', function() {
+    saveBtn.addEventListener('mouseover', function () {
         this.style.background = '#2ecc71';
         this.style.transform = 'translateY(-1px)';
     });
-    saveBtn.addEventListener('mouseout', function() {
+    saveBtn.addEventListener('mouseout', function () {
         this.style.background = '#27ae60';
         this.style.transform = 'translateY(0)';
     });
-    saveBtn.addEventListener('click', function() {
+    saveBtn.addEventListener('click', function () {
         const newKey = input.value.trim();
-        
+
         if (!newKey) {
             alert('⚠️ Please enter an API key');
             input.focus();
             return;
         }
-        
+
         // Basic validation - Gemini keys start with "AIza"
         if (!newKey.startsWith('AIza')) {
             alert('⚠️ Invalid API key format.\n\nGemini API keys start with "AIza".\nPlease check your key and try again.');
             input.focus();
             return;
         }
-        
+
         // Save to localStorage
         localStorage.setItem('gemini_api_key', newKey);
-        
+
         // Update the global variable
         API_KEY = newKey;
-        
+
         console.log('✓ API Key saved successfully:', newKey.substring(0, 10) + '...');
-        
+
         // Close modal
         document.body.removeChild(modal);
-        
+
         // Update UI
         updateBotMessage('✓ API Key saved successfully! You can now generate interview questions.');
         updateStatus('✓ Ready to generate');
@@ -472,27 +473,27 @@ function showApiKeyModal() {
         cursor: pointer;
         transition: all 0.2s ease;
     `;
-    cancelBtn.addEventListener('mouseover', function() {
+    cancelBtn.addEventListener('mouseover', function () {
         this.style.background = '#ec7063';
         this.style.transform = 'translateY(-1px)';
     });
-    cancelBtn.addEventListener('mouseout', function() {
+    cancelBtn.addEventListener('mouseout', function () {
         this.style.background = '#e74c3c';
         this.style.transform = 'translateY(0)';
     });
-    cancelBtn.addEventListener('click', function() {
+    cancelBtn.addEventListener('click', function () {
         document.body.removeChild(modal);
     });
 
     // Allow Enter key to save
-    input.addEventListener('keypress', function(e) {
+    input.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             saveBtn.click();
         }
     });
 
     // Allow Escape to close
-    modal.addEventListener('keydown', function(e) {
+    modal.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             document.body.removeChild(modal);
         }
@@ -509,7 +510,7 @@ function showApiKeyModal() {
         modalContent.appendChild(title);
         modalContent.appendChild(description);
     }
-    
+
     modalContent.appendChild(input);
     modalContent.appendChild(togglePassword);
     modalContent.appendChild(buttonContainer);
@@ -531,6 +532,13 @@ roleInput.addEventListener('keypress', (e) => {
     }
 });
 
+// Button Event Listeners
+generateButton.addEventListener('click', generateQuestions);
+clearButton.addEventListener('click', clearInputs);
+if (settingsButton) {
+    settingsButton.addEventListener('click', showApiKeyModal);
+}
+
 // Clear error when user starts typing
 roleInput.addEventListener('input', hideError);
 resumeInput.addEventListener('input', hideError);
@@ -540,11 +548,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
-    
+
     // Check if API key is configured on load
     const storedKey = localStorage.getItem('gemini_api_key');
     console.log('Checking API key on load:', storedKey ? '✓ Found' : '✗ Not found');
-    
+
     if (storedKey && storedKey.trim() !== "") {
         // API key exists - load it and set ready state
         API_KEY = storedKey;
