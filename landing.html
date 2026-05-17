@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartInterviewBot - AI Interview Preparation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #000;
+        }
+
+        #shaderCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .landing-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.6s ease-out;
+        }
+
+        .landing-container.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .content-box {
+            text-align: center;
+            color: white;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 60px 80px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 600px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ff0080, #7928ca, #00d9ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .description {
+            font-size: 1em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }
+
+        .cta-button {
+            padding: 16px 48px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ff0080, #7928ca);
+            color: white;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 24px rgba(255, 0, 128, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(255, 0, 128, 0.6);
+        }
+
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
+        .features {
+            display: flex;
+            gap: 30px;
+            margin-top: 50px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            text-align: center;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9em;
+            animation: pulse 2s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        #mainApp {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease-out;
+        }
+
+        #mainApp.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Spinner for loading */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .button-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- WebGL Canvas for Viscous Liquid Shader -->
+    <canvas id="shaderCanvas"></canvas>
+
+    <!-- Landing Page -->
+    <div class="landing-container" id="landingContainer">
+        <div class="content-box">
+            <h1>SmartInterviewBot</h1>
+            <p class="subtitle">AI-Powered Interview Preparation</p>
+            <p class="description">
+                Powered by advanced RAG and personalized AI coaching. Get interview questions tailored to your resume and target role.
+            </p>
+            <button class="cta-button" id="enterButton">
+                <span id="buttonText">Enter App</span>
+            </button>
+            
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🧠</div>
+                    <div>Intelligent RAG</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <div>Unlimited API Calls</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💾</div>
+                    <div>Persistent Storage</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hint">Drag across the background to reveal the oil ↻</div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="mainApp"></div>
+
+    <!-- WebGL Shader Script -->
+    <script>
+        // Viscous Liquid Shader Implementation
+        class ViscousLiquidShader {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.gl = canvas.getContext('webgl2');
+                this.mouse = { x: 0, y: 0, speed: 0, lastX: 0, lastY: 0 };
+                
+                if (!this.gl) {
+                    console.warn('WebGL2 not supported, using fallback');
+                    return;
+                }
+
+                this.init();
+            }
+
+            init() {
+                this.setupShaders();
+                this.setupFramebuffers();
+                this.setupMesh();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            setupShaders() {
+                const vertexShader = `#version 300 es
+                    precision highp float;
+                    in vec2 position;
+                    out vec2 uv;
+                    void main() {
+                        uv = position * 0.5 + 0.5;
+                        gl_Position = vec4(position, 0.0, 1.0);
+                    }
+                `;
+
+                const fragmentShader = `#version 300 es
+                    precision highp float;
+                    in vec2 uv;
+                    out vec4 fragColor;
+                    
+                    uniform sampler2D uTexture;
+                    uniform vec2 uMouse;
+                    uniform float uTime;
+                    
+                    // Thin-film interference colors
+                    vec3 thinFilmColor(float angle) {
+                        vec3 color = vec3(0.0);
+                        color += sin(angle * 20.0 + 0.0) * 0.5 + 0.5;
+                        color.g += sin(angle * 20.0 + 2.0) * 0.5 + 0.5;
+                        color.b += sin(angle * 20.0 + 4.0) * 0.5 + 0.5;
+                        return color;
+                    }
+                    
+                    void main() {
+                        vec2 distortion = texture(uTexture, uv).xy;
+                        vec2 displaced = uv + distortion * 0.05;
+                        
+                        float dist = distance(displaced, uMouse);
+                        float fresnel = pow(1.0 - dist, 3.0);
+                        
+                        vec3 iridescent = thinFilmColor(dist * 10.0 + uTime);
+                        
+                        vec3 color = mix(vec3(0.0), iridescent, fresnel * 0.8);
+                        
+                        fragColor = vec4(color, 1.0);
+                    }
+                `;
+
+                const program = this.gl.createProgram();
+                const vs = this.compileShader(vertexShader, this.gl.VERTEX_SHADER);
+                const fs = this.compileShader(fragmentShader, this.gl.FRAGMENT_SHADER);
+                
+                this.gl.attachShader(program, vs);
+                this.gl.attachShader(program, fs);
+                this.gl.linkProgram(program);
+                
+                this.program = program;
+            }
+
+            compileShader(source, type) {
+                const shader = this.gl.createShader(type);
+                this.gl.shaderSource(shader, source);
+                this.gl.compileShader(shader);
+                
+                if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+                    console.error(this.gl.getShaderInfoLog(shader));
+                }
+                
+                return shader;
+            }
+
+            setupFramebuffers() {
+                // Setup framebuffers for ping-pong rendering
+                this.framebuffers = [];
+                for (let i = 0; i < 2; i++) {
+                    const fb = this.gl.createFramebuffer();
+                    const texture = this.gl.createTexture();
+                    
+                    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+                    this.gl.texImage2D(
+                        this.gl.TEXTURE_2D, 0, this.gl.RGBA,
+                        this.canvas.width, this.canvas.height, 0,
+                        this.gl.RGBA, this.gl.UNSIGNED_BYTE, null
+                    );
+                    
+                    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fb);
+                    this.gl.framebufferTexture2D(
+                        this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0,
+                        this.gl.TEXTURE_2D, texture, 0
+                    );
+                    
+                    this.framebuffers.push({ fb, texture });
+                }
+            }
+
+            setupMesh() {
+                const positions = new Float32Array([
+                    -1, -1, 1, -1, -1, 1,
+                    1, -1, 1, 1, -1, 1
+                ]);
+                
+                const vao = this.gl.createVertexArray();
+                this.gl.bindVertexArray(vao);
+                
+                const posBuffer = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, posBuffer);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, positions, this.gl.STATIC_DRAW);
+                
+                const posLocation = this.gl.getAttribLocation(this.program, 'position');
+                this.gl.enableVertexAttribArray(posLocation);
+                this.gl.vertexAttribPointer(posLocation, 2, this.gl.FLOAT, false, 0, 0);
+                
+                this.vao = vao;
+            }
+
+            setupEventListeners() {
+                document.addEventListener('mousemove', (e) => {
+                    this.mouse.lastX = this.mouse.x;
+                    this.mouse.lastY = this.mouse.y;
+                    this.mouse.x = e.clientX / this.canvas.width;
+                    this.mouse.y = 1.0 - e.clientY / this.canvas.height;
+                    
+                    const dx = this.mouse.x - this.mouse.lastX;
+                    const dy = this.mouse.y - this.mouse.lastY;
+                    this.mouse.speed = Math.sqrt(dx * dx + dy * dy);
+                });
+
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            animate() {
+                this.resize();
+                
+                this.gl.useProgram(this.program);
+                this.gl.bindVertexArray(this.vao);
+                
+                const timeLocation = this.gl.getUniformLocation(this.program, 'uTime');
+                const mouseLocation = this.gl.getUniformLocation(this.program, 'uMouse');
+                const textureLocation = this.gl.getUniformLocation(this.program, 'uTexture');
+                
+                const startTime = Date.now();
+                
+                const loop = () => {
+                    const elapsed = (Date.now() - startTime) * 0.001;
+                    
+                    this.gl.uniform1f(timeLocation, elapsed);
+                    this.gl.uniform2f(mouseLocation, this.mouse.x, this.mouse.y);
+                    this.gl.uniform1i(textureLocation, 0);
+                    
+                    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+                    this.gl.clearColor(0, 0, 0, 1);
+                    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+                    
+                    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+                    
+                    requestAnimationFrame(loop);
+                };
+                
+                loop();
+            }
+        }
+
+        // Initialize shader on page load
+        window.addEventListener('load', () => {
+            const canvas = document.getElementById('shaderCanvas');
+            try {
+                new ViscousLiquidShader(canvas);
+            } catch (e) {
+                console.warn('Shader initialization failed, using fallback');
+                canvas.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)';
+            }
+        });
+
+        // Navigation
+        document.getElementById('enterButton').addEventListener('click', async () => {
+            const button = document.getElementById('enterButton');
+            const buttonText = document.getElementById('buttonText');
+            
+            button.disabled = true;
+            buttonText.innerHTML = '<span class="button-loading"><span class="spinner"></span><span>Loading...</span></span>';
+            
+            // Simulate brief loading
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const landingContainer = document.getElementById('landingContainer');
+            const mainApp = document.getElementById('mainApp');
+            
+            try {
+                // Fetch main app HTML
+                const response = await fetch('/app');
+                if (!response.ok) throw new Error('Failed to load app');
+                
+                const html = await response.text();
+                mainApp.innerHTML = html;
+                
+                // Parse and execute scripts
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const scripts = doc.querySelectorAll('script');
+                
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    mainApp.appendChild(newScript);
+                });
+                
+                // Fade out landing, fade in app
+                landingContainer.classList.add('fade-out');
+                setTimeout(() => {
+                    mainApp.classList.add('visible');
+                    // Re-initialize the main app
+                    if (window.initMainApp) window.initMainApp();
+                }, 300);
+                
+            } catch (error) {
+                console.error('Failed to load app:', error);
+                button.disabled = false;
+                buttonText.textContent = 'Enter App';
+                alert('Failed to load main app. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

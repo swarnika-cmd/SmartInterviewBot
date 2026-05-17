@@ -1,4 +1,29 @@
 // ========================================
+// SESSION MANAGEMENT (Pinecone Integration)
+// ========================================
+
+/**
+ * Get or create session ID for Pinecone persistence
+ */
+function getSessionId() {
+    let sessionId = sessionStorage.getItem('smartbot_sessionId');
+    if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('smartbot_sessionId', sessionId);
+    }
+    return sessionId;
+}
+
+/**
+ * Save session ID from API response
+ */
+function saveSessionId(sessionId) {
+    if (sessionId) {
+        sessionStorage.setItem('smartbot_sessionId', sessionId);
+    }
+}
+
+// ========================================
 // DOM ELEMENTS
 // ========================================
 const roleInput = document.getElementById('role-input');
@@ -138,9 +163,9 @@ async function generateQuestions() {
     // Disable button and show loading state
     generateButton.disabled = true;
     generateButton.textContent = '⏳ Generating...';
-    updateStatus('⏳ Generating questions...');
-    updateBotMessage('I\'m analyzing your resume and generating personalized interview questions. This may take a moment...');
-    resultsContainer.innerHTML = `<p class="placeholder-text">🤖 Processing your information... <span class="loading"></span></p>`;
+    updateStatus('⏳ Starting RAG pipeline with Pinecone & Groq...');
+    updateBotMessage('I\'m analyzing your resume using advanced RAG with Pinecone for persistent storage and Groq for unlimited generation. Your embeddings will be saved for future queries. Please wait...');
+    resultsContainer.innerHTML = `<p class="placeholder-text">🤖 Processing with Pinecone + Groq <span class="loading"></span></p>`;
 
     try {
         const systemPrompt = `You are an expert hiring manager for leading technology companies. Your task is to generate challenging, relevant interview questions tailored to the candidate's specific experience and the target job role.
@@ -151,22 +176,15 @@ Guidelines:
 3. Include both behavioral and technical questions (if applicable)
 4. Generate exactly 6-8 questions
 5. Format as a numbered list (1., 2., etc.) with no additional text
-6. Make questions specific to the candidate's actual experience`;
+6. Make questions specific to the candidate's actual experience
+7. ONLY use information present in the provided resume context - do not invent skills or experiences`;
 
-        const userQuery = `Target Role: ${roleText}
-
-Candidate's Resume:
----
-${resumeText}
----
-
-Generate interview questions for this candidate based on their resume and target role.`;
-
-        // Send generic payload to backend
+        // Send payload to backend for RAG processing
         const payload = {
             role: roleText,
             resume: resumeText,
-            systemPrompt: systemPrompt
+            systemPrompt: systemPrompt,
+            sessionId: getSessionId()
         };
 
         const response = await fetch('/api/generate', {
@@ -186,6 +204,12 @@ Generate interview questions for this candidate based on their resume and target
             throw new Error(errorMessage);
         }
 
+        // Save session ID for persistence
+        if (result.sessionId) {
+            saveSessionId(result.sessionId);
+            console.log('✅ Session saved:', result.sessionId);
+        }
+
         // Backend returns { text: "..." } for any provider
         const generatedText = result.text;
 
@@ -198,8 +222,8 @@ Generate interview questions for this candidate based on their resume and target
 
         if (questions.length > 0) {
             resultsContainer.innerHTML = formatQuestionsAsHTML(questions, roleText);
-            updateBotMessage(`Great! I've generated ${questions.length} tailored questions for your ${roleText} interview. Review each question and prepare thoughtful answers!`);
-            updateStatus('✓ Questions generated successfully');
+            updateBotMessage(`🎯 RAG Analysis Complete! I've retrieved the most relevant sections from your resume and generated ${questions.length} targeted questions for your ${roleText} interview. Your embeddings are now stored in Pinecone for future queries!`);
+            updateStatus('✓ RAG pipeline completed successfully (Pinecone + Groq)');
         } else {
             throw new Error('Could not parse questions from API response');
         }
@@ -208,13 +232,13 @@ Generate interview questions for this candidate based on their resume and target
         console.error('Generation failed:', error);
 
         let errorMsg = error.message;
-        if (errorMsg.includes('Server API key not configured')) {
-            errorMsg = 'Server Error: API Key missing. Contact Administrator.';
+        if (errorMsg.includes('not configured')) {
+            errorMsg = 'Configuration Error: Please check your Groq API key and Pinecone setup.';
         }
 
         showError(`❌ Error: ${errorMsg}`);
-        updateBotMessage('Oops! Something went wrong. Please check the connection and try again.');
-        updateStatus('❌ Error occurred');
+        updateBotMessage('Oops! Something went wrong during RAG processing with Pinecone/Groq. Please check your API configuration and try again.');
+        updateStatus('❌ RAG pipeline failed');
         resultsContainer.innerHTML = '<p class="placeholder-text">Failed to generate questions. Please try again.</p>';
     } finally {
         // Re-enable button
