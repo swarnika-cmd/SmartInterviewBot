@@ -342,3 +342,13 @@ Vercel - Hosting and deployment platform
 Inspired by the need for better interview preparation tools
 
 
+## Current RAG Architecture
+
+The current backend:
+- chunks resumes into sections
+- creates semantic embeddings with Pinecone hosted inference (`llama-text-embed-v2`)
+- stores chunks in a per-session Pinecone namespace
+- reuses stored chunks when the same resume is queried again
+- retrieves relevant chunks from Pinecone before sending grounded context to Groq
+
+Required environment variables are documented in `.env.example`.
