@@ -193,13 +193,19 @@ Guidelines:
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            throw new Error(`Failed to parse server response: ${parseError.message}`);
+        }
 
         if (!response.ok) {
             // Handle error messages from backend
             const errorDetails = result.error || result;
-            const errorMessage = errorDetails.message ||
-                (typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails));
+            const errorMessage = typeof errorDetails === 'string' 
+                ? errorDetails 
+                : (errorDetails.message || JSON.stringify(errorDetails));
 
             throw new Error(errorMessage);
         }
@@ -231,9 +237,19 @@ Guidelines:
     } catch (error) {
         console.error('Generation failed:', error);
 
-        let errorMsg = error.message;
-        if (errorMsg.includes('not configured')) {
-            errorMsg = 'Configuration Error: Please check your Groq API key and Pinecone setup.';
+        let errorMsg = error.message || String(error);
+        
+        // Provide helpful guidance based on error type
+        if (errorMsg.includes('Configuration Error') || errorMsg.includes('not configured')) {
+            errorMsg += '\n\n📝 Fix: Check your .env file has GROQ_API_KEY and PINECONE_API_KEY set correctly.';
+        } else if (errorMsg.includes('Groq')) {
+            errorMsg += '\n\n📝 Fix: Check your Groq API key at https://console.groq.com/';
+        } else if (errorMsg.includes('Pinecone')) {
+            errorMsg += '\n\n📝 Fix: Check your Pinecone API key at https://www.pinecone.io/';
+        } else if (errorMsg.includes('JSON')) {
+            errorMsg += '\n\n📝 Fix: This usually means the API is returning an error page. Check API keys and quotas.';
+        } else if (errorMsg.includes('parsing')) {
+            errorMsg += '\n\n📝 Fix: The server response was invalid. Check server logs for details.';
         }
 
         showError(`❌ Error: ${errorMsg}`);

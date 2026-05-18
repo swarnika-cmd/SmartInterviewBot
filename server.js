@@ -39,11 +39,20 @@ function requiredEnv(name) {
 async function requestJson(url, options = {}) {
     const response = await fetch(url, options);
     const bodyText = await response.text();
-    const body = bodyText ? JSON.parse(bodyText) : {};
+    
+    let body = {};
+    if (bodyText) {
+        try {
+            body = JSON.parse(bodyText);
+        } catch (e) {
+            // If JSON parsing fails, store the raw text
+            body = { _rawText: bodyText };
+        }
+    }
 
     if (!response.ok) {
-        const message = body.message || body.error || bodyText || `${response.status} ${response.statusText}`;
-        throw new Error(message);
+        const message = body.message || body.error || body._rawText || bodyText || `${response.status} ${response.statusText}`;
+        throw new Error(`API Error [${response.status}]: ${message}`);
     }
 
     return body;
@@ -142,21 +151,40 @@ function chunkResume(resumeText) {
 }
 
 async function embedTexts(texts, inputType) {
-    const response = await requestJson('https://api.pinecone.io/embed', {
-        method: 'POST',
-        headers: pineconeHeaders(),
-        body: JSON.stringify({
-            model: PINECONE_EMBED_MODEL,
-            parameters: {
-                input_type: inputType,
-                truncate: 'END',
-                dimension: PINECONE_DIMENSION
-            },
-            inputs: texts.map(text => ({ text }))
-        })
-    });
+    if (!texts || texts.length === 0) {
+        throw new Error('No texts provided for embedding');
+    }
 
-    return response.data.map(item => item.values);
+    try {
+        const response = await requestJson('https://api.pinecone.io/embed', {
+            method: 'POST',
+            headers: pineconeHeaders(),
+            body: JSON.stringify({
+                model: PINECONE_EMBED_MODEL,
+                parameters: {
+                    input_type: inputType,
+                    truncate: 'END',
+                    dimension: PINECONE_DIMENSION
+                },
+                inputs: texts.map(text => ({ text }))
+            })
+        });
+
+        if (!response.data || !Array.isArray(response.data)) {
+            console.error('Invalid embedding response:', JSON.stringify(response, null, 2));
+            throw new Error('Pinecone embedding API returned invalid response format');
+        }
+
+        return response.data.map(item => {
+            if (!item.values) {
+                throw new Error('Embedding missing values field');
+            }
+            return item.values;
+        });
+    } catch (error) {
+        console.error('❌ Embedding Error:', error.message);
+        throw new Error(`Pinecone Embedding Error: ${error.message}`);
+    }
 }
 
 async function deleteNamespace(namespace) {
@@ -280,21 +308,39 @@ Target Role: ${jobRole}
 
 Generate interview questions based ONLY on the resume sections above. Do not invent skills or experiences not present in the provided context.`;
 
-    const response = await requestJson('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${requiredEnv('GROQ_API_KEY')}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: GROQ_MODEL,
-            messages: [{ role: 'user', content: ragPrompt }],
-            temperature: 0.7,
-            max_tokens: 1024
-        })
-    });
+    try {
+        const groqApiKey = requiredEnv('GROQ_API_KEY');
+        
+        if (!groqApiKey.startsWith('gsk_')) {
+            throw new Error('Invalid Groq API key format. Should start with "gsk_"');
+        }
 
-    return response.choices?.[0]?.message?.content;
+        const response = await requestJson('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${groqApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: GROQ_MODEL,
+                messages: [{ role: 'user', content: ragPrompt }],
+                temperature: 0.7,
+                max_tokens: 1024
+            })
+        });
+
+        const content = response.choices?.[0]?.message?.content;
+        
+        if (!content) {
+            console.error('Groq response:', JSON.stringify(response, null, 2));
+            throw new Error('Groq API returned empty response. Check API key and quotas.');
+        }
+
+        return content;
+    } catch (error) {
+        console.error('Groq API error:', error.message);
+        throw new Error(`Groq API Error: ${error.message}`);
+    }
 }
 
 app.post('/api/generate', async (req, res) => {
@@ -303,39 +349,58 @@ app.post('/api/generate', async (req, res) => {
         const sessionId = req.body.sessionId || `session_${Date.now()}`;
 
         if (!role || !resume || !systemPrompt) {
-            throw new Error('role, resume, and systemPrompt are required.');
+            return res.status(400).json({ error: 'Missing required fields: role, resume, and systemPrompt' });
         }
 
-        requiredEnv('GROQ_API_KEY');
-        requiredEnv('PINECONE_API_KEY');
+        // Validate API keys early
+        try {
+            requiredEnv('GROQ_API_KEY');
+            requiredEnv('PINECONE_API_KEY');
+        } catch (error) {
+            return res.status(500).json({ error: `Configuration Error: ${error.message}` });
+        }
 
         console.log('\n🚀 Starting Pinecone-backed RAG pipeline...');
+        console.log(`   Session: ${sessionId}`);
+        console.log(`   Role: ${role}`);
+        console.log(`   Resume length: ${resume.length} characters`);
 
-        await initPinecone();
-        const indexState = await ensureResumeIndexed(resume, sessionId);
-        console.log(`${indexState.reused ? '♻️ Reused' : '📦 Indexed'} resume chunks: ${indexState.chunkCount}`);
-
-        const topChunks = await retrieveTopChunks(role, indexState.namespace, 3);
-        if (topChunks.length === 0) {
-            throw new Error('No relevant resume chunks were retrieved from Pinecone.');
+        try {
+            await initPinecone();
+        } catch (error) {
+            console.error('❌ Pinecone initialization failed:', error.message);
+            return res.status(500).json({ error: `Pinecone Error: ${error.message}` });
         }
 
-        const text = await generateQuestionsWithGroq(role, topChunks, systemPrompt);
-        if (!text) {
-            throw new Error('Groq returned an empty response.');
-        }
+        try {
+            const indexState = await ensureResumeIndexed(resume, sessionId);
+            console.log(`${indexState.reused ? '♻️ Reused' : '📦 Indexed'} resume chunks: ${indexState.chunkCount}`);
 
-        res.json({
-            text,
-            sessionId,
-            retrieval: {
-                reusedIndex: indexState.reused,
-                chunkCount: indexState.chunkCount
+            const topChunks = await retrieveTopChunks(role, indexState.namespace, 3);
+            if (topChunks.length === 0) {
+                return res.status(500).json({ error: 'No relevant resume chunks were retrieved from Pinecone.' });
             }
-        });
+
+            const text = await generateQuestionsWithGroq(role, topChunks, systemPrompt);
+            if (!text) {
+                return res.status(500).json({ error: 'Groq returned an empty response. Please try again.' });
+            }
+
+            res.json({
+                text,
+                sessionId,
+                retrieval: {
+                    reusedIndex: indexState.reused,
+                    chunkCount: indexState.chunkCount
+                }
+            });
+        } catch (error) {
+            console.error('❌ RAG Pipeline Error:', error.message);
+            res.status(500).json({ error: `RAG Pipeline Error: ${error.message}` });
+        }
     } catch (error) {
-        console.error('❌ Generation Error:', error.message);
-        res.status(500).json({ error: error.message });
+        console.error('❌ Unexpected Error:', error.message);
+        res.status(500).json({ error: `Server Error: ${error.message}` });
     }
 });
 
