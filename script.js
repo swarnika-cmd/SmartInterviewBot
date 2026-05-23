@@ -282,8 +282,8 @@ clearButton.addEventListener('click', clearInputs);
 roleInput.addEventListener('input', hideError);
 resumeInput.addEventListener('input', hideError);
 
-// Initialize Lucide icons if available
-document.addEventListener('DOMContentLoaded', () => {
+// Initialization function that can be called dynamically
+window.initMainApp = function() {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
@@ -291,7 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial State
     updateStatus('✓ Ready for input');
     updateBotMessage('Hello! I\'m your Interview Prep Bot. Ready to help you prepare for interviews!');
-});
+};
+
+// Also run on DOMContentLoaded for direct loads
+document.addEventListener('DOMContentLoaded', window.initMainApp);
 
 // Add CSS animations
 const style = document.createElement('style');

@@ -1,354 +1,207 @@
-🧠 Smart Interview Prep Bot
-An AI-powered web application that generates personalized interview questions based on your resume and target job role using Google's Gemini API.
-
-🔗 Live Demo
-[Try it here! ] (https://smart-interview-bot.vercel.app/)
-
-📋 Table of Contents
-
-About
-Features
-Technologies Used
-Project Structure
-Getting Started
-How to Use
-Configuration
-Deployment
-Screenshots
-Known Issues
-Future Enhancements
-Contributing
-License
-Contact
-
-
-📖 About
-Smart Interview Prep Bot helps job seekers prepare for interviews by generating customized questions that directly reference their experience and skills. Unlike generic interview prep tools, this bot analyzes your actual resume content and creates questions tailored to your specific background and the role you're targeting.
-Why This Project?
-
-🎯 Personalized Preparation: Questions are based on YOUR resume, not generic templates
-⚡ Fast Generation: Get 6+ questions in seconds
-🤖 AI-Powered: Leverages Google's Gemini 2.5 Flash model
-📱 Responsive Design: Works seamlessly on desktop, tablet, and mobile
-🆓 Free to Use: No signup required (just add your API key)
-
-
-✨ Features
-
-Resume Analysis: AI reads and understands your resume content
-Role-Specific Questions: Questions tailored to your target job title
-Instant Generation: Get results in 3-5 seconds
-Clean UI: Modern, intuitive interface built with Tailwind CSS
-Error Handling: User-friendly error messages and validation
-Loading States: Visual feedback during generation
-Responsive Design: Optimized for all screen sizes
-No Backend Required: Pure frontend application
-
-
-🛠️ Technologies Used
-TechnologyPurposeVersionHTML5Structure and markup-CSS3Custom styling-Tailwind CSSUtility-first styling framework3.x (CDN)JavaScript (ES6+)Application logic and API integration-Google Gemini APIAI-powered question generation2.5 FlashLucide IconsModern icon libraryLatestFetch APIHTTP requests to Gemini APINative
-
-📁 Project Structure
-smartInterviewBot/
-│
-├── index.html          # Main HTML structure
-├── script.js           # JavaScript logic and API calls
-├── styles.css          # Custom CSS styles
-├── README.md           # Project documentation (this file)
-File Descriptions
-
-index.html: Contains the page structure, input forms, and output containers
-script.js: Handles user interactions, API calls to Gemini, and DOM manipulation
-styles.css: Custom styles including animations, responsive adjustments, and theme colors
-
-
-🚀 Getting Started
-Prerequisites
-Before you begin, ensure you have:
-
-A modern web browser (Chrome, Firefox, Safari, or Edge)
-A Google Gemini API key (Get one here)
-Basic text editor (VS Code, Sublime Text, etc.)
-Git installed (optional, for version control)
-
-Installation
-
-Clone the repository
-
-bashgit clone https://github.com/yourusername/smart-interview-prep.git
-cd smart-interview-prep
-Or download as ZIP and extract.
-
-Get your Gemini API Key
-
-Visit Google AI Studio
-Sign in with your Google account
-Click "Create API Key"
-Copy the generated key
-
-
-Configure the API Key
-Open script.js and find this line (around line 3):
-
-javascript   const API_KEY = ""; // Replace with your API key
-Replace the empty string with your actual API key:
-javascript   const API_KEY = "AIzaSyD...your-key-here...xyz123";
-
-Open in Browser
-
-Double-click index.html, OR
-Use Live Server extension in VS Code, OR
-Run a local server:
-
-
-📱 How to Use
-Step-by-Step Guide
-
-Enter Target Job Role
-
-Type the job title you're applying for
-Example: "Senior Frontend Developer" or "Data Scientist"
-
-
-Paste Your Resume
-
-Copy your resume content (plain text)
-Paste it into the large text area
-Include: work experience, projects, skills, education
-
-
-Generate Questions
-
-Click the "Generate Interview Questions" button
-Wait 3-5 seconds while AI analyzes your information
-
-
-Review Your Questions
-
-Questions appear in styled cards
-Each question references specific items from your resume
-Use these to practice your interview responses
-
-
-
-Example Input
-Job Role:
-Senior Frontend Engineer
-Resume:
-John Doe
-Email: john@example.com
-
-EXPERIENCE
-- Built React applications serving 10,000+ users
-- Implemented Redux for state management
-- Optimized performance, reducing load time by 40%
-
-PROJECTS
-- E-commerce Platform: Built with React, Node.js, MongoDB
-- Dashboard Analytics: Data visualization with D3.js
-
-SKILLS
-JavaScript, React, TypeScript, Node.js, Git, Agile
-Example Output
-1. Can you walk me through how you optimized your React application to achieve a 40% reduction in load time?
-
-2. Tell me about your experience implementing Redux for state management in applications serving 10,000+ users.
-
-3. Describe the architecture of your E-commerce Platform. What made you choose React, Node.js, and MongoDB?
-
-4. How did you approach data visualization in your Dashboard Analytics project using D3.js?
-
-5. What TypeScript patterns do you find most useful when building large-scale React applications?
-
-6. Can you share an example of a complex state management challenge you faced and how you solved it?
-
-⚙️ Configuration
-API Settings
-In script.js, you can customize these settings:
-javascript// API Configuration
-const API_KEY = "";  // Your Gemini API key
-const MODEL = "gemini-2.5-flash-preview-09-2025";  // AI model version
-const MIN_QUESTIONS = 6;  // Minimum questions to generate
-Customizing the AI Behavior
-Edit the systemPrompt in script.js (around line 60):
-javascriptconst systemPrompt = `You are an expert hiring manager...
-
-Rules:
-1. Focus on linking questions to specific projects
-2. Generate a minimum of ${MIN_QUESTIONS} questions
-3. Structure output as a numbered list
-4. Include both technical and behavioral questions  // Add this
-5. Ask about specific technologies mentioned  // Add this
-`;
-Styling Customization
-In styles.css, you can modify:
-
-Colors: Change the color scheme
-Fonts: Update font families
-Spacing: Adjust padding and margins
-Animations: Modify the spinner or transitions
-
-
-🌐 Deployment
-Deploy to Vercel (Recommended)
-
-Push to GitHub
-
-bashgit init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/yourusername/smart-interview-prep.git
-git push -u origin main
-
-Connect to Vercel
-
-Go to vercel.com
-Sign up/login with GitHub
-Click "New Project"
-Import your repository
-Click "Deploy"
-
-
-Add Environment Variable (Security)
-
-In Vercel Dashboard → Settings → Environment Variables
-Add: GEMINI_API_KEY = your-api-key
-Update code to use process.env.GEMINI_API_KEY
-
-
-⚠️ Known Issues
-Security Concerns
-
-API Key Exposure: The API key is visible in browser source code
-
-Impact: Anyone can view and potentially misuse your key
-Solution: Implement a backend serverless function (see below)
-
-
-No Rate Limiting: Users can spam the generate button
-
-Impact: Could exhaust your API quota
-Solution: Add cooldown timer between requests
-
-
-
-Limitations
-
-Internet Required: No offline functionality
-API Dependency: Relies on Google's service availability
-English Only: Currently only supports English language
-No History: Generated questions aren't saved
-Single Format: No options for question types or difficulty levels
-
-Browser Compatibility
-
-✅ Chrome 90+
-✅ Firefox 88+
-✅ Safari 14+
-✅ Edge 90+
-❌ Internet Explorer (not supported)
-
-
-🔮 Future Enhancements
-Planned Features
-
- Backend Integration: Secure API key with serverless functions
- Local Storage: Save generated questions for later review
- Export Options: Download as PDF or copy to clipboard
- Question Categories: Separate technical, behavioral, and situational questions
- Difficulty Levels: Choose junior, mid-level, or senior question complexity
- Company Research: Include company-specific questions
- Answer Practice: Record and analyze practice answers
- Multiple Languages: Support for non-English resumes
- Dark Mode: Toggle between light and dark themes
- User Accounts: Save history across devices
-
-Improvement Ideas
-
-Add question templates for different industries
-Implement AI feedback on practice answers
-Create a mock interview simulator
-Add sharing functionality for questions
-Build a question bank with community contributions
-
-
-🤝 Contributing
-Contributions are welcome! Here's how you can help:
-How to Contribute
-
-Fork the repository
-Create a feature branch
-
-bash   git checkout -b feature/AmazingFeature
-
-Commit your changes
-
-bash   git commit -m "Add some AmazingFeature"
-
-Push to the branch
-
-bash   git push origin feature/AmazingFeature
-
-Open a Pull Request
-
-Contribution Guidelines
-
-Write clear, commented code
-Test your changes thoroughly
-Update README if adding new features
-Follow existing code style
-Be respectful and constructive
-
-Bug Reports
-Found a bug? Please open an issue with:
-
-Clear description of the problem
-Steps to reproduce
-Expected vs actual behavior
-Browser and OS information
-Screenshots if applicable
-
-
-📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
-MIT License
-
-Copyright (c) 2024 [Your Name]
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-🙏 Acknowledgments
-
-Google Gemini API - AI model powering the question generation
-Tailwind CSS - Utility-first CSS framework
-Lucide Icons - Beautiful icon library
-Vercel - Hosting and deployment platform
-Inspired by the need for better interview preparation tools
-
-
-## Current RAG Architecture
-
-The current backend:
-- chunks resumes into sections
-- creates semantic embeddings with Pinecone hosted inference (`llama-text-embed-v2`)
-- stores chunks in a per-session Pinecone namespace
-- reuses stored chunks when the same resume is queried again
-- retrieves relevant chunks from Pinecone before sending grounded context to Groq
-
-Required environment variables are documented in `.env.example`.
+# 🧠 Smart Interview Prep Bot
+
+[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-v4.x-blue.svg)](https://expressjs.com/)
+[![Vector DB](https://img.shields.io/badge/Vector%20DB-Pinecone-blueviolet.svg)](https://www.pinecone.io/)
+[![LLM Engine](https://img.shields.io/badge/LLM-Groq%20Llama%203.3-orange.svg)](https://groq.com/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+An **enterprise-grade, high-performance RAG (Retrieval-Augmented Generation)** web application that creates customized, context-grounded interview questions. It maps your actual resume experiences and skills to your target job description using **Pinecone Vector Database** for semantic search and **Groq LLM** for ultra-fast, zero-cost generation.
+
+---
+
+## 🚀 System Architecture & RAG Pipeline
+
+Instead of pasting your entire resume into an LLM context (which wastes tokens, causes context distraction, and increases AI hallucinations), **Smart Interview Prep Bot** uses a state-of-the-art **RAG architecture**:
+
+```mermaid
+graph TD
+    User([Candidate Inputs Resume & Target Role]) --> ExpressRoute[Express Backend: /api/generate]
+    
+    subgraph Storage & Caching [Pinecone Namespace & Caching]
+        ExpressRoute --> HashCheck{Calculate SHA-256 Hash}
+        HashCheck --> FetchManifest[Fetch Vector: __resume_manifest__]
+        FetchManifest --> Match{Hash Matches Metadata?}
+        Match -- Yes (Cache Hit) --> ReuseChunks[Reuse Cached Pinecone Chunks]
+        Match -- No (Cache Miss) --> ClearSession[Clear Namespace]
+        ClearSession --> ChunkResume[Chunk Resume by Headers]
+        ChunkResume --> EmbedChunks[Pinecone Embedding API: llama-text-embed-v2]
+        EmbedChunks --> UpsertPinecone[Upsert Chunks & New Manifest]
+    end
+
+    subgraph RAG Retrieval [Semantic Search & Grounding]
+        ReuseChunks --> EmbedQuery[Embed Target Role]
+        UpsertPinecone --> EmbedQuery
+        EmbedQuery --> QueryIndex[Query Namespace via Cosine Similarity]
+        QueryIndex --> TopChunks[Retrieve Top 3 Most Relevant Chunks]
+    end
+
+    subgraph LLM Generation [Groq Generation]
+        TopChunks --> ConstructPrompt[Craft System-Grounded Prompt]
+        ConstructPrompt --> GroqLLM[Groq Chat API: llama-3.3-70b-versatile]
+        GroqLLM --> FinalQuestions[Parse & Format Numbered Questions]
+    end
+
+    FinalQuestions --> Client[Frontend UI Terminal Console]
+```
+
+---
+
+## ✨ Features
+
+- ⚡ **Zero-Cost Generation**: Uses Groq's high-speed API keys and Pinecone's serverless free-tier for maximum performance with **$0 hosting/inference cost**.
+- 🧠 **Context-Grounded RAG**: Restricts questions purely to the resume contents found via vector similarity, minimizing hallucinations.
+- ♻️ **Persistent Session Caching**: Generates SHA-256 hashes of resumes and matches them against `__resume_manifest__` inside Pinecone namespace. If you run multiple role queries against the same resume, the app bypasses chunking and embedding entirely.
+- 👾 **Cyberpunk Retro UI**: Custom glassmorphic, command-line-inspired frontend with terminal status bars, active avatar animations, and interactive controls.
+- 📱 **Fully Responsive Layout**: Built with custom, hand-crafted CSS variables designed to work beautifully on mobile, tablet, and widescreen monitors.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology | Version / Spec |
+| :--- | :--- | :--- |
+| **Frontend** | Vanilla HTML5 & ES6+ Javascript | Modern DOM with native async fetch |
+| **Styling** | Custom Vanilla CSS3 | Custom transitions, animations, CSS Grid & Flexbox |
+| **Icons** | Lucide Icons | Latest |
+| **Server** | Express.js / Node.js | v4.18+ / v18+ |
+| **Vector Index** | Pinecone Database | API version `2025-10` |
+| **Embeddings** | Pinecone Hosted Inference | `llama-text-embed-v2` (384-dimension, Cosine metric) |
+| **LLM Model** | Groq Inference Engine | `llama-3.3-70b-versatile` |
+
+---
+
+## ⚙️ Configuration & Environment Variables
+
+Create a `.env` file in the root directory. You can copy the template from `.env.example`:
+
+```bash
+# General
+PORT=3000
+NODE_ENV=development
+
+# Groq Credentials
+GROQ_API_KEY=gsk_your_groq_api_key
+
+# Pinecone Credentials
+PINECONE_API_KEY=pcb_your_pinecone_api_key
+PINECONE_INDEX_NAME=smartinterviewbot-embeddings
+```
+
+---
+
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+Ensure you have the following installed on your machine:
+* [Node.js (version 18 or above)](https://nodejs.org/)
+* [Pinecone API Key (Get one free here)](https://www.pinecone.io/)
+* [Groq API Key (Get one free here)](https://console.groq.com/)
+
+### 💻 Quick Start Installation
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/smartinterviewbot.git
+   cd smartinterviewbot
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables**
+   Create your `.env` file and populate it with your API keys:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Launch Application**
+   For production:
+   ```bash
+   npm start
+   ```
+   For hot-reloading development server:
+   ```bash
+   npm run dev
+   ```
+
+5. **Access Application**
+   Open your browser to [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📖 Deep Dives & API Specifications
+
+<details>
+<summary>🔍 <b>RAG Implementation Details</b></summary>
+
+### 1. Header-Based Chunking (`chunkResume`)
+The resume is normalized and split on clear header boundaries using a regular expression:
+```javascript
+const sections = normalized.split(/\n(?=[A-Z][A-Z\s/&-]{2,}\n)/);
+```
+Chunks under 30 characters are filtered out as noise, ensuring only substantial chunks (like experiences, skills, and projects) get embedded.
+
+### 2. Session Manifest Caching (`ensureResumeIndexed`)
+To avoid redundant embeds, the backend fetches a manifest vector called `__resume_manifest__` from Pinecone inside the user's specific `sessionId` namespace. 
+* If the `resumeHash` stored on that manifest matches the newly computed hash, the backend skips embedding.
+* If it doesn't match, the backend clears the namespace and generates new embeddings.
+
+### 3. Top-K Semantic Retrieval (`retrieveTopChunks`)
+The query is sent to Pinecone using the `passage` parameter for chunk documents and `query` parameters for the user's target job title. The vector database returns the top 3 matches using cosine similarity scoring, which is then fed into the prompt context.
+</details>
+
+<details>
+<summary>🔌 <b>API Endpoints</b></summary>
+
+### POST `/api/generate`
+Executes the full Pinecone RAG pipeline and returns generated questions.
+
+**Request Body:**
+```json
+{
+  "role": "Senior React Developer",
+  "resume": "EXPERIENCE\n- Built React applications with Redux...\nSKILLS\n- React, Redux, Node.js",
+  "systemPrompt": "You are a senior technical hiring manager...",
+  "sessionId": "session_123456789" (optional)
+}
+```
+
+**Response Body:**
+```json
+{
+  "text": "1. Can you describe how you managed React application state using Redux?\n2. What are the performance advantages of React over other frontend libraries?",
+  "sessionId": "session_123456789",
+  "retrieval": {
+    "reusedIndex": true,
+    "chunkCount": 4
+  }
+}
+```
+</details>
+
+<details>
+<summary>🛠️ <b>Troubleshooting & Diagnostics</b></summary>
+
+### ❌ Pinecone Configuration / Initialization Error
+Ensure that `PINECONE_API_KEY` is set correctly in `.env` and that your index name matches. The server will attempt to automatically spin up a serverless index `smartinterviewbot-embeddings` in the `aws/us-east-1` region if it doesn't already exist.
+
+### ❌ Groq API returns empty response
+This usually indicates that your Groq API key is invalid or has expired, or you've exceeded the RPM limits. Verify your credentials on the [Groq Console](https://console.groq.com/).
+
+### ❌ Server not reading `.env` changes
+Ensure you completely restart the Node process using `npm start` or `npm run dev` after editing your `.env` file.
+</details>
+
+---
+
+## 🛡️ License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+> [!TIP]
+> **Pro Tip:** Try querying different roles for the same resume. You'll notice the second query is significantly faster because the application reuses your existing embeddings from Pinecone storage!
