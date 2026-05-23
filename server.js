@@ -424,3 +424,5 @@ app.listen(PORT, async () => {
         console.error(`❌ Pinecone startup check failed: ${error.message}`);
     }
 });
+
+module.exports = app;
