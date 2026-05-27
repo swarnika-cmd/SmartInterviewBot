@@ -270,7 +270,7 @@ async function ensureResumeIndexed(resume, sessionId) {
 
     vectors.push({
         id: manifestId,
-        values: new Array(PINECONE_DIMENSION).fill(0),
+        values: (() => { const v = new Array(PINECONE_DIMENSION).fill(0); v[0] = 1.0; return v; })(),
         metadata: {
             resumeHash,
             chunkCount: chunks.length,
@@ -404,25 +404,27 @@ app.post('/api/generate', async (req, res) => {
     }
 });
 
-app.listen(PORT, async () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('🚀 SmartInterviewBot Server Running');
-    console.log(`📍 http://localhost:${PORT}`);
-    console.log('='.repeat(50));
-    console.log('\n📦 Configured Services:');
-    console.log(`  Groq API:     ${process.env.GROQ_API_KEY ? '✅ Configured' : '❌ Not set'}`);
-    console.log(`  Pinecone:     ${process.env.PINECONE_API_KEY ? '✅ Configured' : '❌ Not set'}`);
-    console.log(`  Embeddings:   ${PINECONE_EMBED_MODEL} (${PINECONE_DIMENSION}d)`);
-    console.log(`  Groq model:   ${GROQ_MODEL}`);
-    console.log('='.repeat(50) + '\n');
+if (require.main === module) {
+    app.listen(PORT, async () => {
+        console.log('\n' + '='.repeat(50));
+        console.log('🚀 SmartInterviewBot Server Running');
+        console.log(`📍 http://localhost:${PORT}`);
+        console.log('='.repeat(50));
+        console.log('\n📦 Configured Services:');
+        console.log(`  Groq API:     ${process.env.GROQ_API_KEY ? '✅ Configured' : '❌ Not set'}`);
+        console.log(`  Pinecone:     ${process.env.PINECONE_API_KEY ? '✅ Configured' : '❌ Not set'}`);
+        console.log(`  Embeddings:   ${PINECONE_EMBED_MODEL} (${PINECONE_DIMENSION}d)`);
+        console.log(`  Groq model:   ${GROQ_MODEL}`);
+        console.log('='.repeat(50) + '\n');
 
-    try {
-        if (process.env.PINECONE_API_KEY) {
-            await initPinecone();
+        try {
+            if (process.env.PINECONE_API_KEY) {
+                await initPinecone();
+            }
+        } catch (error) {
+            console.error(`❌ Pinecone startup check failed: ${error.message}`);
         }
-    } catch (error) {
-        console.error(`❌ Pinecone startup check failed: ${error.message}`);
-    }
-});
+    });
+}
 
 module.exports = app;
