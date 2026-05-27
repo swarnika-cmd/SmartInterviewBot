@@ -6,10 +6,9 @@
 [![LLM Engine](https://img.shields.io/badge/LLM-Groq%20Llama%203.3-orange.svg)](https://groq.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Hosted on Vercel](https://img.shields.io/badge/Hosted-Vercel-black?logo=vercel)](https://vercel.com/)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Vercel-brightgreen?style=for-the-badge&logo=vercel)](https://smart-interview-bot.vercel.app/)
 
 An **enterprise-grade, high-performance RAG (Retrieval-Augmented Generation)** web application that creates customized, context-grounded interview questions. It maps your actual resume experiences and skills to your target job description using **Pinecone Vector Database** for semantic search and **Groq LLM** for ultra-fast, zero-cost generation.
-
-🔗 **Live Demo:** [smart-interview-bot.vercel.app](https://smart-interview-bot.vercel.app/)
 
 ---
 
