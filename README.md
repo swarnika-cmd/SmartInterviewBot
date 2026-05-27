@@ -10,6 +10,8 @@
 
 An **enterprise-grade, high-performance RAG (Retrieval-Augmented Generation)** web application that creates customized, context-grounded interview questions. It maps your actual resume experiences and skills to your target job description using **Pinecone Vector Database** for semantic search and **Groq LLM** for ultra-fast, zero-cost generation.
 
+![Smart Interview Prep Bot Screenshot](./screenshot.png)
+
 ---
 
 ## 🚀 System Architecture & RAG Pipeline
