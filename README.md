@@ -5,8 +5,11 @@
 [![Vector DB](https://img.shields.io/badge/Vector%20DB-Pinecone-blueviolet.svg)](https://www.pinecone.io/)
 [![LLM Engine](https://img.shields.io/badge/LLM-Groq%20Llama%203.3-orange.svg)](https://groq.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Hosted on Vercel](https://img.shields.io/badge/Hosted-Vercel-black?logo=vercel)](https://vercel.com/)
 
 An **enterprise-grade, high-performance RAG (Retrieval-Augmented Generation)** web application that creates customized, context-grounded interview questions. It maps your actual resume experiences and skills to your target job description using **Pinecone Vector Database** for semantic search and **Groq LLM** for ultra-fast, zero-cost generation.
+
+🔗 **Live Demo:** [smart-interview-bot.vercel.app](https://smart-interview-bot.vercel.app/)
 
 ---
 
@@ -47,13 +50,13 @@ graph TD
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- ⚡ **Zero-Cost Generation**: Uses Groq's high-speed API keys and Pinecone's serverless free-tier for maximum performance with **$0 hosting/inference cost**.
-- 🧠 **Context-Grounded RAG**: Restricts questions purely to the resume contents found via vector similarity, minimizing hallucinations.
-- ♻️ **Persistent Session Caching**: Generates SHA-256 hashes of resumes and matches them against `__resume_manifest__` inside Pinecone namespace. If you run multiple role queries against the same resume, the app bypasses chunking and embedding entirely.
-- 👾 **Cyberpunk Retro UI**: Custom glassmorphic, command-line-inspired frontend with terminal status bars, active avatar animations, and interactive controls.
-- 📱 **Fully Responsive Layout**: Built with custom, hand-crafted CSS variables designed to work beautifully on mobile, tablet, and widescreen monitors.
+* ⚡ **Zero-Cost Generation**: Utilizes Groq's high-speed API keys and Pinecone's serverless free-tier for maximum performance with **$0 hosting & inference cost**.
+* 🧠 **Context-Grounded RAG**: Restricts questions purely to the resume contents found via vector similarity, minimizing hallucinations and ensuring realistic evaluation.
+* ♻️ **Persistent Session Caching**: Generates SHA-256 hashes of resumes and matches them against `__resume_manifest__` inside a Pinecone namespace. If you run multiple role queries against the same resume, the app bypasses chunking and embedding entirely.
+* 👾 **Cyberpunk Retro UI**: A custom, hand-crafted glassmorphic, command-line-inspired frontend with terminal status bars, active avatar animations, and interactive controls.
+* 📱 **Fully Responsive Layout**: Built with custom CSS variables designed to work beautifully on mobile, tablet, and widescreen monitors.
 
 ---
 
@@ -81,10 +84,12 @@ PORT=3000
 NODE_ENV=development
 
 # Groq Credentials
+# Get your API key at: https://console.groq.com/
 GROQ_API_KEY=gsk_your_groq_api_key
 
 # Pinecone Credentials
-PINECONE_API_KEY=pcb_your_pinecone_api_key
+# Sign up at: https://www.pinecone.io/
+PINECONE_API_KEY=pcsk_your_pinecone_api_key
 PINECONE_INDEX_NAME=smartinterviewbot-embeddings
 ```
 
@@ -95,15 +100,15 @@ PINECONE_INDEX_NAME=smartinterviewbot-embeddings
 ### 📋 Prerequisites
 Ensure you have the following installed on your machine:
 * [Node.js (version 18 or above)](https://nodejs.org/)
-* [Pinecone API Key (Get one free here)](https://www.pinecone.io/)
-* [Groq API Key (Get one free here)](https://console.groq.com/)
+* [Pinecone Account (Free Tier)](https://www.pinecone.io/)
+* [Groq Cloud Account (Free Tier)](https://console.groq.com/)
 
-### 💻 Quick Start Installation
+### 💻 Local Installation
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/smartinterviewbot.git
-   cd smartinterviewbot
+   git clone https://github.com/swarnika-cmd/SmartInterviewBot.git
+   cd SmartInterviewBot
    ```
 
 2. **Install Dependencies**
@@ -112,19 +117,20 @@ Ensure you have the following installed on your machine:
    ```
 
 3. **Configure Environment Variables**
-   Create your `.env` file and populate it with your API keys:
+   Create your local environment file:
    ```bash
    cp .env.example .env
    ```
+   Open the `.env` file and populate it with your `GROQ_API_KEY` and `PINECONE_API_KEY`.
 
 4. **Launch Application**
-   For production:
-   ```bash
-   npm start
-   ```
-   For hot-reloading development server:
+   For local development:
    ```bash
    npm run dev
+   ```
+   For production start:
+   ```bash
+   npm start
    ```
 
 5. **Access Application**
@@ -132,25 +138,50 @@ Ensure you have the following installed on your machine:
 
 ---
 
-## 📖 Deep Dives & API Specifications
+## 🌐 Vercel Serverless Deployment
+
+This project is configured to run out-of-the-box as a **Vercel Serverless Application**.
+
+### Architecture differences:
+* **Local environment:** [server.js](file:///c:/Users/somva/OneDrive/Desktop/smartInterviewBot/server.js) starts a persistent Node/Express server listening on `PORT`.
+* **Vercel environment:** Vercel deploys the application serverlessly using the entrypoint at [api/index.js](file:///c:/Users/somva/OneDrive/Desktop/smartInterviewBot/api/index.js), which exports the Express app instance. Vercel's CDN routes static file requests directly from the root directory for maximum speed, and rewrites `/api/*` calls to the serverless function.
+
+### How to Deploy:
+
+1. **Push your code to GitHub** (ensure `.env` is ignored by `.gitignore`).
+2. **Connect to Vercel**:
+   * Go to [vercel.com](https://vercel.com) and click **"New Project"**.
+   * Import your GitHub repository.
+3. **Configure Environment Variables**:
+   * Under Project Settings -> **Environment Variables**, add the following keys:
+     * `GROQ_API_KEY` = *[Your Groq Key]*
+     * `PINECONE_API_KEY` = *[Your Pinecone Key]*
+4. **Click "Deploy"**. Vercel will build your static files and compile your serverless function automatically!
+
+---
+
+## 📖 Deep Dives & Code Specifications
 
 <details>
 <summary>🔍 <b>RAG Implementation Details</b></summary>
 
-### 1. Header-Based Chunking (`chunkResume`)
-The resume is normalized and split on clear header boundaries using a regular expression:
+### 1. Header-Based Chunking
+The resume is normalized and split on section header boundaries using a regular expression:
 ```javascript
 const sections = normalized.split(/\n(?=[A-Z][A-Z\s/&-]{2,}\n)/);
 ```
-Chunks under 30 characters are filtered out as noise, ensuring only substantial chunks (like experiences, skills, and projects) get embedded.
+Chunks under 30 characters are filtered out as noise, ensuring only substantial resume components (like experiences, skills, and projects) get embedded.
 
-### 2. Session Manifest Caching (`ensureResumeIndexed`)
+### 2. Session Manifest Caching
 To avoid redundant embeds, the backend fetches a manifest vector called `__resume_manifest__` from Pinecone inside the user's specific `sessionId` namespace. 
-* If the `resumeHash` stored on that manifest matches the newly computed hash, the backend skips embedding.
+* If the `resumeHash` stored in the metadata matches the newly computed hash, the backend skips embedding and similarity updates.
 * If it doesn't match, the backend clears the namespace and generates new embeddings.
 
-### 3. Top-K Semantic Retrieval (`retrieveTopChunks`)
-The query is sent to Pinecone using the `passage` parameter for chunk documents and `query` parameters for the user's target job title. The vector database returns the top 3 matches using cosine similarity scoring, which is then fed into the prompt context.
+> [!NOTE]
+> Pinecone serverless indexes reject all-zero vectors. The manifest vector values are initialized with a non-zero element (`v[0] = 1.0`) to avoid API validation errors while preserving semantic caching.
+
+### 3. Top-K Semantic Retrieval
+The user's query (target job role) is embedded and sent to Pinecone namespace. The database returns the top 3 matches using cosine similarity scoring, which is then fed into the prompt context for LLM generation.
 </details>
 
 <details>
@@ -186,13 +217,13 @@ Executes the full Pinecone RAG pipeline and returns generated questions.
 <summary>🛠️ <b>Troubleshooting & Diagnostics</b></summary>
 
 ### ❌ Pinecone Configuration / Initialization Error
-Ensure that `PINECONE_API_KEY` is set correctly in `.env` and that your index name matches. The server will attempt to automatically spin up a serverless index `smartinterviewbot-embeddings` in the `aws/us-east-1` region if it doesn't already exist.
+Ensure that `PINECONE_API_KEY` is set correctly in your environment. The server will attempt to automatically spin up a serverless index `smartinterviewbot-embeddings` in the `aws/us-east-1` region if it doesn't already exist.
+
+### ❌ Dense vectors must contain at least one non-zero value
+This indicates that the manifest vector was initialized with all zeroes. Ensure you are running the latest codebase where the manifest vector values array has a non-zero value (e.g. `v[0] = 1.0`).
 
 ### ❌ Groq API returns empty response
 This usually indicates that your Groq API key is invalid or has expired, or you've exceeded the RPM limits. Verify your credentials on the [Groq Console](https://console.groq.com/).
-
-### ❌ Server not reading `.env` changes
-Ensure you completely restart the Node process using `npm start` or `npm run dev` after editing your `.env` file.
 </details>
 
 ---
